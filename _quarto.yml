@@ -1,0 +1,7 @@
+project:
+  title: "ytp_post_event_survey"
+  type: website
+  output-dir: docs
+
+editor: visual
+
