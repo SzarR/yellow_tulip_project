@@ -33,14 +33,14 @@ We read in our data with the code snippet below. Moving forward, we'd like to di
 
 ```{r message=FALSE}
 
-df_pe_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_cdp_analysis/data/YTP Post Event Survey (Responses) - Form Responses 1.csv')
+df_pe_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_surveys/data/YTP Post Event Survey (Responses) - Form Responses 1.csv')
 ```
 
 Let's also read in our other dataset from the fall survey so that we could combine them:
 
 ```{r}
 
-df_fall_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_post_event_analysis/data/YTP Fall Survey.csv')
+df_fall_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_surveys/data/YTP Fall Survey.csv')
 ```
 
 ## Data Engineering
@@ -71,7 +71,7 @@ df_pe_survey_clean <-
     Recommend = "7. How likely would you be to recommend the event to a friend?"
   ) |> 
   mutate(Age = as.double(Age)) |> 
-  mutate(Age_Bin = ifelse(Age < 40, '<40', '>40')) |> 
+  mutate(Age_Bin = ifelse(Age < 25, '< 25', '> 25')) |> 
   mutate(Email = tolower(Email)) |> 
   mutate(Zipcode = as.character(stringr::str_extract(Zipcode, "\\d+.\\d+"))) |> 
   mutate(Race = stringr::str_replace(Race, "2022|2023|0022", NA_character_)) |> 
@@ -101,7 +101,7 @@ df_fall_survey_clean <-
     Gender = "12. How do you define your gender? Please check all that apply.",
     Member_Type = "13. Are you a:") |> 
   mutate(Age = as.double(Age)) |> 
-  mutate(Age_Bin = ifelse(Age < 40, '<40', '>40')) |> 
+  mutate(Age_Bin = ifelse(Age < 25, '< 25', '> 25')) |> 
   mutate(Email = tolower(Email)) |> 
   mutate(Zipcode = as.character(stringr::str_extract(Zipcode, "\\d+.\\d+"))) |> 
   mutate(Date = as.Date(Date, format = "%Y/%m/%d"))
