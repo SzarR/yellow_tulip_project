@@ -29,18 +29,18 @@ library(corrplot)
 
 # Data Ingestion
 
-We read in our data with the code snippet below. Moving forward, we'd like to directly connect to *Google Sheets* using the package `googlesheets4` to establish a straight connection and refresh this analysis whenever we'd like.
+We read in our data with the code snippet below.
 
 ```{r message=FALSE}
 
-df_pe_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_surveys/data/YTP Post Event Survey (Responses) - Form Responses 1.csv')
+df_pe_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/yellow_tulip_project/data/YTP Post Event Survey (Responses) - Form Responses 1.csv')
 ```
 
 Let's also read in our other dataset from the fall survey so that we could combine them:
 
-```{r}
+```{r message=FALSE}
 
-df_fall_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/ytp_surveys/data/YTP Fall Survey.csv')
+df_fall_survey <- readr::read_csv(file = '/Users/rszarek/Library/CloudStorage/OneDrive-Unum/Projects/yellow_tulip_project/data/YTP Fall Survey.csv')
 ```
 
 ## Data Engineering
@@ -75,7 +75,10 @@ df_pe_survey_clean <-
   mutate(Email = tolower(Email)) |> 
   mutate(Zipcode = as.character(stringr::str_extract(Zipcode, "\\d+.\\d+"))) |> 
   mutate(Race = stringr::str_replace(Race, "2022|2023|0022", NA_character_)) |> 
-  mutate(Date = as.Date(Date, format = "%m/%d/%Y"))
+  mutate(Date = as.Date(Date, format = "%m/%d/%Y")) |> 
+  # Remove internal data cases
+  filter(Email != 'outreach@theyellowtulipproject.org' | is.na(Email))
+
 ```
 
 ### Fall Survey Engineering
@@ -170,8 +173,15 @@ We take a look at the distribution of age in our survey:
 
 ```{r message=FALSE}
 
-ggplot(df_final, aes(x=Age))+
+viz <-
+ggplot(df_final, aes(x=Age)) +
   geom_histogram(color="darkblue", fill="lightblue", binwidth =  3)
+
+viz
+
+ggsave(filename = "viz_dist_age.png",
+       path = "images",
+       device = "png")
 ```
 
 This is a very interesting graphic. We can see that the distribution of our sample is split between around \< 40 years of age and \> 40 years of age. Therefore, I think it makes sense that the conclusion of this survey regarding the age of the participants is that we are targeting both groups of people, young and elderly. For the purposes of binning the age variable, we should have 40 be the cut-off point.
@@ -260,7 +270,8 @@ Let's visualize this in a graphic:
 
 ```{r message=FALSE}
 
-df_final |> 
+viz <- 
+  df_final |> 
   group_by(Age_Bin) |> 
   summarise(sample_size = n(),
             Mean_Connected = mean(Connected, na.rm=T),
@@ -276,6 +287,12 @@ df_final |>
   theme(axis.text.x = element_text(angle = 30, vjust = 0.5, hjust=0.7)) +
   scale_fill_manual(values = c("#f9ba00",
                                "#00235f"))
+
+viz
+
+ggsave(filename = "viz_age_mean_likert.png",
+       path = "images",
+       device = "png")
 ```
 
 Differences are consistent across the two age brackets. The biggest difference is observed with the question: *"This event helps reduce the stigma associated with mental illness."* responses. The Age \< 40 bracket hovers around an "Agree" for this response. A \> 40 response hovers around 4.5.
@@ -284,6 +301,7 @@ Differences are consistent across the two age brackets. The biggest difference i
 
 ```{r message=FALSE, warning=FALSE}
 
+viz <-
 df_final |> 
   filter(Event == 'Fall Hope Garden Planting' |
          Event == 'Spring Hope Day Event') |> 
@@ -302,6 +320,12 @@ df_final |>
   theme(axis.text.x = element_text(angle = 30, vjust = 0.5, hjust=0.7)) +
   scale_fill_manual(values = c("#f9ba00",
                                "#00235f"))
+
+viz
+
+ggsave(filename = "viz_event_by_mean_likert.png",
+       path = "images",
+       device = "png")
 ```
 
 ### Responses by Top Two Zipcodes
@@ -310,6 +334,7 @@ Results are mostly consistent between the top two zipcodes: *02360* and *06830*.
 
 ```{r message=FALSE, warning=FALSE}
 
+viz <-
 df_final |> 
   filter(Zipcode == '02360' |
          Zipcode == '06830') |> 
@@ -328,12 +353,19 @@ df_final |>
   theme(axis.text.x = element_text(angle = 30, vjust = 0.5, hjust=0.7)) +
   scale_fill_manual(values = c("#f9ba00",
                                "#00235f"))
+
+viz
+
+ggsave(filename = "viz_zipcode_by_mean_likert.png",
+       path = "images",
+       device = "png")
 ```
 
 ## Responses by Gender
 
 ```{r message=FALSE, warning=FALSE}
 
+viz <-
 df_final |> 
   filter(!is.na(Gender)) |> 
   group_by(Gender) |> 
@@ -352,12 +384,19 @@ df_final |>
   scale_fill_manual(values = c("#f9ba00",
                                "#00235f",
                                "darkgray"))
+
+viz
+
+ggsave(filename = "viz_gender_by_mean_likert.png",
+       path = "images",
+       device = "png")
 ```
 
 ### Responses by Age Bin
 
 ```{r message=FALSE, warning=FALSE}
 
+viz <-
 df_final |> 
   filter(Join_Network == 'Student' |
            Join_Network == 'Community Member' |
@@ -378,6 +417,12 @@ df_final |>
   scale_fill_manual(values = c("#f9ba00",
                                "#00235f",
                                'darkgray'))
+
+viz
+
+ggsave(filename = "viz_network_by_mean_likert.png",
+       path = "images",
+       device = "png")
 ```
 
 Most responses across the three types of members is in-line with one another. Though for students, the ability to reduce stigma with these events is lower than Educators and Community Members. This could be an area for further research.
@@ -401,6 +446,9 @@ df_corr <-
 M_corr = cor(df_corr, use = "pairwise.complete.obs")
 M_test = cor.mtest(df_corr, conf.level = .95)
 
+file_path <- "images/corr_plot.png"
+png(height=600, width=800, file=file_path)
+
 corrplot(
   M_corr,
   method = 'number',
@@ -417,6 +465,8 @@ corrplot(
   tl.cex = 1 / par("cex"),
   cl.cex = 1 / par("cex")
 )
+
+dev.off()
 ```
 
 We have a lot of statistically significant findings from the survey questions. Some takeaways include:
@@ -512,6 +562,11 @@ df_final |>
 
 pal <- brewer.pal(8,"Dark2")
 
+file_path <- "images/word_cloud.png"
+png(height=600, width=800, file=file_path)
+
 tokens_clean %>% 
   with(wordcloud(word, n, random.order = FALSE, max.words = 25, colors=pal))
+
+dev.off()
 ```
